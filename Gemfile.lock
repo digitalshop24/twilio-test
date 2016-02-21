@@ -3,6 +3,8 @@ GEM
   specs:
     builder (3.2.2)
     coderay (1.1.0)
+    concurrent-ruby (1.0.0)
+    connection_pool (2.2.0)
     daemons (1.2.3)
     eventmachine (1.0.9.1)
     jwt (1.5.2)
@@ -17,6 +19,11 @@ GEM
     rack-protection (1.5.3)
       rack
     raindrops (0.15.0)
+    redis (3.2.2)
+    sidekiq (4.1.0)
+      concurrent-ruby (~> 1.0)
+      connection_pool (~> 2.2, >= 2.2.0)
+      redis (~> 3.2, >= 3.2.1)
     sinatra (1.4.7)
       rack (~> 1.5)
       rack-protection (~> 1.4)
@@ -41,7 +48,11 @@ PLATFORMS
 
 DEPENDENCIES
   pry
+  sidekiq
   sinatra
   thin
   twilio-ruby
   unicorn
+
+BUNDLED WITH
+   1.11.2

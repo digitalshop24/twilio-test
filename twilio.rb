@@ -29,6 +29,7 @@ module TwilioInit
 end
 
 class TwilioTest < Sinatra::Base
+  enable :sessions
   include TwilioInit
 
   get '/' do
@@ -36,26 +37,27 @@ class TwilioTest < Sinatra::Base
   end
 
   post '/call' do
-    phone = params[:phone]
-    @name = params[:name]
-    @car = params[:car]
+    phone = session[:phone] = params[:phone]
+    session[:dealer_phone] = params[:dealer_phone]
+    session[:name] = params[:name]
+    session[:car] = params[:car]
 
     if valid? phone
       url = ''
       if (phone != '+375292595346')
-        url = URI.encode("#{ROOT_PATH}/connect?name=#{@name}&car=#{@car}")
+        url = URI.encode("#{ROOT_PATH}/connect")
       else
-        url = URI.encode("#{ROOT_PATH}/ty_pidor")
+        url = URI.encode("#{ROOT_PATH}/sasha_action")
       end
-      @client = Twilio::REST::Client.new TWILIO_SID, TWILIO_TOKEN
-      @call = @client.account.calls.create(
+      client = Twilio::REST::Client.new TWILIO_SID, TWILIO_TOKEN
+      call = client.account.calls.create(
         from: TWILIO_NUMBER,
         to: phone,
         url: url,
         method: 'GET'
       )
       @msg ='Спасибо. Вам скоро позвонят.'
-      File.open('log/calls.log', 'a') { |file| file.write("#{Time.now} | To: #{@call.to} | Sid: #{@call.sid}\n\r") }
+      File.open('log/calls.log', 'a') { |file| file.write("#{Time.now} | To: #{call.to} | Sid: #{call.sid}\n\r") }
     else
       @msg = 'Неверный номер'
       File.open('log/calls.log', 'a') { |file| file.write("#{Time.now} === BAD NUMBER: #{phone} ===\n\r") }
@@ -64,11 +66,10 @@ class TwilioTest < Sinatra::Base
   end
 
   get '/connect' do
-    @name = params[:name]
-    @car = params[:car]
-
+    name = params[:name] || session[:name]
+    car = params[:car] || session[:car]
     response = Twilio::TwiML::Response.new do |r|
-      r.Say "Здравствуйте, #{@name}! Вы записались на тест-драйв автомобиля #{CARS[@car.to_i]}", voice: 'alice', language: 'ru-RU'
+      r.Say "Здравствуйте, #{name}! Вы записались на тест-драйв автомобиля #{CARS[car.to_i]}", voice: 'alice', language: 'ru-RU'
       r.Gather numDigits: '1', action: "/menu_select", method: 'GET' do |g|
         g.Say "Нажмите один, если хотите, чтобы вас соединили с дилером. Два - если не хотите.", voice: 'alice', language: 'ru-RU'
       end
@@ -77,11 +78,17 @@ class TwilioTest < Sinatra::Base
     response.text
   end
 
-  get 
+  get '/menu_say' do
+    Twilio::TwiML::Response.new do |r|
+      r.Gather numDigits: '1', action: "/menu_select", method: 'GET' do |g|
+        g.Say "Нажмите один, если хотите, чтобы вас соединили с дилером. Два - если не хотите.", voice: 'alice', language: 'ru-RU'
+      end
+    end.text
+  end
 
-  get '/ty_pidor' do
+  get '/sasha_action' do
     response = Twilio::TwiML::Response.new do |r|
-      r.Say "Привет. Ты пидор!", voice: 'alice', language: 'ru-RU'
+      r.Say "Привет, Саша. Ты пидор!", voice: 'alice', language: 'ru-RU'
     end
     response.text
   end
@@ -94,14 +101,14 @@ class TwilioTest < Sinatra::Base
       case user_selection
       when "1"
         r.Say "Ожидайте. Сейчас вас соединят с дилером.", voice: 'alice', language: 'ru-RU'
-        r.Dial '+13105551212'
-        phrase = "Спасибо за запись на тест-драйв."
+        r.Dial session[:dealer_phone]
+        r.Say 'Ошибка набора либо дилер повесил трубку. Всего доброго.', voice: 'alice', language: 'ru-RU'
       when "2"
         phrase = "Жаль, что вы передумали."
+        TwilioWorker.perform_in(1.minutes, session[:phone], session[:name], session[:car])
       else
-        phrase = "Вы ничего не выбрали."
+        redirect '/menu_say'
       end
-      r.Say phrase, voice: 'alice', language: 'ru-RU'
       r.Hangup
     end
     response.text
