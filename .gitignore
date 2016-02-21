@@ -1,0 +1,4 @@
+config/env.rb
+log
+tmp
+run

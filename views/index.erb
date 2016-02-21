@@ -1,0 +1,32 @@
+<form method="post" action="call">
+	<div class="row">
+	  <fieldset class="form-group col-md-4">
+	    <label for="name">Имя клиента</label>
+	    <input type="tel" name="name" class="form-control" id="name" placeholder="Введите имя">
+	  </fieldset>
+	</div>
+	<div class="row">
+	  <fieldset class="form-group col-md-4">
+	    <label for="phone">Телефон клиента</label>
+	    <input type="tel" name="phone" class="form-control" id="phone" placeholder="Введите телефон">
+	  </fieldset>
+	</div>
+	<div class="row">
+	  <fieldset class="form-group col-md-4">
+	    <label for="car">Модель автомобиля</label>
+	    <select name="car" class="form-control" id="car">
+	    	<option disabled>Выберите модель автомобиля</option>
+			<option value="0">Ford Focus</option>
+			<option value="1">Ford Fiesta</option>
+			<option value="2">Ford Mondeo</option>
+	    </select>
+	  </fieldset>
+	</div>
+		<div class="row">
+	  <fieldset class="form-group col-md-4">
+	    <label for="dealer_phone">Телефон дилера</label>
+	    <input type="tel" name="dealer_phone" class="form-control" id="phone" placeholder="Введите телефон дилера">
+	  </fieldset>
+	</div>
+  <button type="submit" class="btn btn-primary">Записаться на тест-драйв</button>
+</form>
