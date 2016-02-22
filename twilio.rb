@@ -21,7 +21,7 @@ class TwilioTest < Sinatra::Base
   end
 
   post '/call' do
-    if valid? @phone && valid? @dealer_phone
+    if(valid?(@phone) && valid?(@dealer_phone))
       url = ''
       if (@dealer_phone != '+375292595346')
         url = "#{ROOT_PATH}/connect?#{params.to_query}"
@@ -75,7 +75,7 @@ class TwilioTest < Sinatra::Base
       case @user_selection
       when "1"
         r.Say "Ожидайте. Сейчас вас соединят с клиентом.", voice: 'alice', language: 'ru-RU'
-        r.Dial @dealer_phone
+        r.Dial @phone
       when "2"
         TwilioWorker.perform_in(60, @phone, @dealer_phone, @name, @car)
         r.Say "Вам перезвонят через одну минуту.", voice: 'alice', language: 'ru-RU'
