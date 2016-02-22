@@ -21,9 +21,9 @@ class TwilioTest < Sinatra::Base
   end
 
   post '/call' do
-    if valid? @phone
+    if valid? @phone && valid? @dealer_phone
       url = ''
-      if (@phone != '+375292595346')
+      if (@dealer_phone != '+375292595346')
         url = "#{ROOT_PATH}/connect?#{params.to_query}"
       else
         url = "#{ROOT_PATH}/sasha_action"
@@ -31,11 +31,11 @@ class TwilioTest < Sinatra::Base
       client = Twilio::REST::Client.new TWILIO_SID, TWILIO_TOKEN
       call = client.account.calls.create(
         from: TWILIO_NUMBER,
-        to: @phone,
+        to: @dealer_phone,
         url: url,
         method: 'GET'
       )
-      @msg ='Спасибо. Вам скоро позвонят.'
+      @msg ='Спасибо за запись на тест-драйв. С вами в ближайшее время свыжется дилер.'
       File.open('log/calls.log', 'a') { |file| file.write("#{Time.now} | To: #{call.to} | Sid: #{call.sid}\n\r") }
     else
       @msg = 'Неверный номер'
@@ -46,9 +46,9 @@ class TwilioTest < Sinatra::Base
 
   get '/connect' do
     response = Twilio::TwiML::Response.new do |r|
-      r.Say "Здравствуйте, #{@name}! Вы записались на тест-драйв автомобиля #{CARS[@car.to_i]}", voice: 'alice', language: 'ru-RU'
+      r.Say "Здравствуйте. На тест-драйв автомобиля #{CARS[@car.to_i]} записался клиент #{@name}.", voice: 'alice', language: 'ru-RU'
       r.Gather numDigits: '1', action: "/menu_select?#{params.to_query}", method: 'GET' do |g|
-        g.Say "Нажмите один, если хотите, чтобы вас соединили с дилером. Два - если не хотите.", voice: 'alice', language: 'ru-RU', loop: 3
+        g.Say "Нажмите один, если хотите поговорить с клиентом сейчас, два - если позже.", voice: 'alice', language: 'ru-RU', loop: 3
       end
       r.Say "Что-то пошло не так", voice: 'alice', language: 'ru-RU'
     end
@@ -58,7 +58,7 @@ class TwilioTest < Sinatra::Base
   get '/menu_say' do
     Twilio::TwiML::Response.new do |r|
       r.Gather numDigits: '1', action: "/menu_select?#{params.to_query}", method: 'GET' do |g|
-        g.Say "Нажмите один, если хотите, чтобы вас соединили с дилером. Два - если не хотите.", voice: 'alice', language: 'ru-RU', loop: 3
+        g.Say "Нажмите один, если хотите поговорить с клиентом сейчас, два - если позже.", voice: 'alice', language: 'ru-RU', loop: 3
       end
     end.text
   end
@@ -74,12 +74,11 @@ class TwilioTest < Sinatra::Base
     response = Twilio::TwiML::Response.new do |r|
       case @user_selection
       when "1"
-        r.Say "Ожидайте. Сейчас вас соединят с дилером.", voice: 'alice', language: 'ru-RU'
+        r.Say "Ожидайте. Сейчас вас соединят с клиентом.", voice: 'alice', language: 'ru-RU'
         r.Dial @dealer_phone
-        # r.Say 'Ошибка набора либо дилер повесил трубку. Всего доброго.', voice: 'alice', language: 'ru-RU'
       when "2"
         TwilioWorker.perform_in(60, @phone, @dealer_phone, @name, @car)
-        phrase = "Жаль, что вы передумали."
+        r.Say "Вам перезвонят через одну минуту.", voice: 'alice', language: 'ru-RU'
       else
         redirect "/menu_say?#{params.to_query}"
       end

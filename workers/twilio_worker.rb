@@ -8,7 +8,7 @@ class TwilioWorker
     client = Twilio::REST::Client.new TWILIO_SID, TWILIO_TOKEN
       call = client.account.calls.create(
         from: ENV['from'],
-        to: phone,
+        to: dealer_phone,
         url: URI.encode("#{ROOT_PATH}/connect?phone=#{phone}&dealer_phone=#{dealer_phone}&name=#{name}&car=#{car}"),
         method: 'GET'
       )

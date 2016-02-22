@@ -1,0 +1,3 @@
+cd /var/www/apps/twilio-test/ && bundle exec unicorn -c /var/www/apps/twilio-test/config/unicorn.rb -E production -D
+
+cd /var/www/apps/twilio-test/ && bundle exec sidekiq -c 10 -r /var/www/apps/twilio-test/workers/twilio_worker.rb -L /var/www/apps/crm/log/sidekiq.log -P /var/www/apps/twilio-test/run/sidekiq.pid -e production -d
